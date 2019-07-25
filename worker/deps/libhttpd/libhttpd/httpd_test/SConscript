@@ -1,0 +1,31 @@
+Import('*')
+
+_env = env.Clone()
+
+#_env.Append(CPPFLAGS = ['-std=c99'])
+
+_env.Append(CPPPATH = ['#system/include','#include',
+                       '#libhttpd',
+                       '#libfoundation/include',
+                       '#libnet/include',
+                       '#libaux/include',
+                       '#libev',
+                       '#libckits/include/'])
+
+#_env.Append(LIBPATH = ['#out/system/libcutils','#out/system/liblog','#out/system/libutils'])
+
+_env.Append(LIBPATH = ['#release/','#deplibs'])
+
+_env.Append(LIBS = ['avs_httpd','avs_ev','avs_net','avs_aux','avs_srtp','m','openfec','ckits','pthread','utils','cutils','log','c','dl', 'rt','gsv_modules_video_coding','gsv_common_video','gsv_modules_rtp_rtcp','gsv_modules_rbe','gsv_system_wrappers', 'gsv_base', 'gsv_common'])
+
+_env.Append(RPATH = ['./'])
+
+objs = _env.Glob('*.c') +  _env.Glob('*.cpp') + _env.Glob('*.cc')
+
+_target_name = 'httpd_test'
+
+target = _env.Program(_target_name, objs)
+
+all =  target
+Return('all')
+
