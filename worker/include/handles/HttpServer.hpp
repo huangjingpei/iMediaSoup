@@ -1,22 +1,28 @@
 #pragma once
-
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <string>
 #include <string.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
-#include "../common/mongoose.h"
+#include "mongoose.h"
 
 // 定义http返回callback
 typedef void OnRspCallback(mg_connection *c, std::string);
 // 定义http请求handler
 using ReqHandler = std::function<bool (std::string, std::string, mg_connection *c, OnRspCallback)>;
 
+#define WITH_UNIX_IPC
 class HttpServer
 {
 public:
-	HttpServer() {}
-	~HttpServer() {}
+	HttpServer();
+	~HttpServer();
 	void Init(const std::string &port); // 初始化设置
 	bool Start(); // 启动httpserver
 	bool Close(); // 关闭
@@ -34,12 +40,20 @@ private:
 	static void SendHttpRsp(mg_connection *connection, std::string rsp);
 
 	static int isWebsocket(const mg_connection *connection); // 判断是否是websoket类型连接
-	static void HandleWebsocketMessage(mg_connection *connection, int event_type, websocket_message *ws_msg); 
+	static void HandleWebsocketMessage(mg_connection *connection, int event_type, websocket_message *ws_msg);
 	static void SendWebsocketMsg(mg_connection *connection, std::string msg); // 发送消息到指定连接
 	static void BroadcastWebsocketMsg(std::string msg); // 给所有连接广播消息
 	static std::unordered_set<mg_connection *> s_websocket_session_set; // 缓存websocket连接
 
 	std::string m_port;    // 端口
 	mg_mgr m_mgr;          // 连接管理器
+
+#ifdef WITH_UNIX_IPC
+	//Unix socket IPC
+	static int m_unix_fd;
+	static char *m_unix_buf;
+	static struct sockaddr_un s_unix_addr;
+#endif
+
 };
 

@@ -1,12 +1,53 @@
+#include "../../include/handles/HttpServer.hpp"
+
 #include <utility>
-#include "http_server.h"
+
+// 初始化HttpServer静态类成员
+mg_serve_http_opts HttpServer::s_server_option;
+std::string HttpServer::s_web_dir = "./web";
+#ifdef WITH_UNIX_IPC
+int HttpServer::m_unix_fd = -1;
+char *HttpServer::m_unix_buf = NULL;
+struct sockaddr_un HttpServer::s_unix_addr;
+#endif
+std::unordered_map<std::string, ReqHandler> HttpServer::s_handler_map;
+std::unordered_set<mg_connection *> HttpServer::s_websocket_session_set;
+
+HttpServer::HttpServer()
+{
+}
+
+HttpServer::~HttpServer()
+{
+#ifdef WITH_UNIX_IPC
+	if (m_unix_buf != NULL) {
+		free(m_unix_buf);
+	}
+
+	if (m_unix_fd != 0) {
+		close(m_unix_fd);
+	}
+#endif
+}
 
 void HttpServer::Init(const std::string &port)
 {
 	m_port = port;
+
 	s_server_option.enable_directory_listing = "yes";
 	s_server_option.document_root = s_web_dir.c_str();
 
+#ifdef WITH_UNIX_IPC
+	m_unix_fd = socket(AF_LOCAL, SOCK_DGRAM, 0);
+    bzero(&s_unix_addr, sizeof(s_unix_addr));
+    s_unix_addr.sun_family = AF_LOCAL;
+    strcpy(s_unix_addr.sun_path, "/tmp/MSWorkerServer");
+	m_unix_buf = (char *)malloc(20*1024);
+
+	struct timeval tv = {0, 100000};
+	setsockopt(m_unix_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	setsockopt(m_unix_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+#endif
 	// 其他http设置
 
 	// 开启 CORS，本项只针对主页加载有效
@@ -48,7 +89,7 @@ void HttpServer::OnHttpWebsocketEvent(mg_connection *connection, int event_type,
 }
 
 // ---- simple http ---- //
-static bool route_check(http_message *http_msg, char *route_prefix)
+static bool route_check(http_message *http_msg, const char *route_prefix)
 {
 	if (mg_vcmp(&http_msg->uri, route_prefix) == 0)
 		return true;
@@ -114,10 +155,32 @@ void HttpServer::HandleHttpEvent(mg_connection *connection, http_message *http_r
 	// 其他请求
 	if (route_check(http_req, "/")) // index page
 		mg_serve_http(connection, http_req, s_server_option);
-	else if (route_check(http_req, "/api/hello")) 
+	else if (route_check(http_req, "/api/hello"))
 	{
 		// 直接回传
 		SendHttpRsp(connection, "welcome to httpserver");
+	} else if (route_check(http_req, "/api/msv1")) {
+		//把内容转发到worker进程
+		if (http_req->body.len == 0) {
+			SendHttpRsp(connection, "welcome to test restful interface");
+		} else {
+			//Format the send buf as "12:hello world!,";
+			int length = sprintf(m_unix_buf, "%zu:%s,", http_req->body.len, http_req->body.p);
+			int nbytes = sendto(m_unix_fd, m_unix_buf, length,
+						0, (struct sockaddr*) &s_unix_addr, sizeof(s_unix_addr));
+			if ((nbytes < 0) && (errno == EWOULDBLOCK)) {
+				nbytes = sprintf(m_unix_buf, "{ \"error\": \"/api/msv1 send timeout.\"}");
+			}
+			//获取worker进程的处理结果
+			socklen_t len =sizeof(sizeof(s_unix_addr));
+			nbytes = recvfrom(m_unix_fd, m_unix_buf, 20*1024,
+				0, (struct sockaddr*) &s_unix_addr, &len);
+			if ((nbytes < 0) && (errno == EWOULDBLOCK)) {
+				nbytes = sprintf(m_unix_buf, "{ \"error\": \"/api/msv1 recv timeout.\"}");
+			}
+			//把消息返回给客户端
+			SendHttpRsp(connection, std::string(m_unix_buf, nbytes));
+		}
 	}
 	else if (route_check(http_req, "/api/sum"))
 	{
@@ -138,7 +201,7 @@ void HttpServer::HandleHttpEvent(mg_connection *connection, http_message *http_r
 		mg_printf(
 			connection,
 			"%s",
-			"HTTP/1.1 501 Not Implemented\r\n" 
+			"HTTP/1.1 501 Not Implemented\r\n"
 			"Content-Length: 0\r\n\r\n");
 	}
 }

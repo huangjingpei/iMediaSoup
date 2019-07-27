@@ -1843,7 +1843,8 @@ void cs_hmac_sha1(const unsigned char *key, size_t key_len,
 /* Amalgamated: #include "common/platform.h" */
 
 #ifndef DISABLE_MD5
-#define DISABLE_MD5 0
+//#define DISABLE_MD5 0
+#define DISABLE_MD5 1
 #endif
 
 #ifdef __cplusplus

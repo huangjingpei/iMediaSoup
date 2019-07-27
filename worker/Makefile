@@ -14,7 +14,7 @@ DOCKER ?= docker
 MEDIASOUP_BUILDTYPE ?= Release
 
 .PHONY:	\
-	default test fuzzer xcode lint format bear tidy clean clean-all \
+	default console test fuzzer xcode lint format bear tidy clean clean-all \
 	docker-build docker-run
 
 default:
@@ -29,6 +29,12 @@ ifeq ($(MEDIASOUP_WORKER_BIN),)
 	$(MAKE) BUILDTYPE=$(MEDIASOUP_BUILDTYPE) -C out
 	$(LCOV) --directory ./ --zerocounters
 	./out/$(MEDIASOUP_BUILDTYPE)/mediasoup-worker-test --invisibles --use-colour=yes $(MEDIASOUP_TEST_TAGS)
+endif
+
+console:
+ifeq ($(MEDIASOUP_WORKER_BIN),)
+	$(PYTHON) ./scripts/configure.py -R avsterm
+	$(MAKE) BUILDTYPE=$(MEDIASOUP_BUILDTYPE) -C out
 endif
 
 fuzzer:

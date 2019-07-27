@@ -61,6 +61,10 @@ namespace Channel
 
 	Request::Request(Channel::UnixStreamSocket* channel, json& jsonRequest) : channel(channel)
 	{
+		//MediaSoup的参数解析部分的特点
+		//1.必须要有'id'，'method'没有则出错
+		//2.所有的数据都要有'internal'和'data'字段
+		//鉴于以上两点，有客户端上来的参数必须要转化为MediaSoup能够支持的字段，信令改造的主要工作也是存在于此。
 		MS_TRACE();
 
 		auto jsonIdIt = jsonRequest.find("id");

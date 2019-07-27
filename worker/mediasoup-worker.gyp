@@ -7,7 +7,8 @@
       'deps/libuv/uv.gyp:libuv',
       'deps/openssl/openssl.gyp:openssl',
       'deps/libsrtp/libsrtp.gyp:libsrtp',
-      'deps/usrsctp/usrsctp.gyp:usrsctp'
+      'deps/usrsctp/usrsctp.gyp:usrsctp',
+      'deps/mghttp/mghttp.gyp:mghttp'
     ],
     # TODO: SCTP_DEBUG must be dynamic based on a condition variable in common.gyp.
     # 'defines': [ 'SCTP_DEBUG' ],
@@ -27,6 +28,7 @@
       'src/handles/SignalsHandler.cpp',
       'src/handles/TcpConnection.cpp',
       'src/handles/TcpServer.cpp',
+      'src/handles/HttpServer.cpp',
       'src/handles/Timer.cpp',
       'src/handles/UdpSocket.cpp',
       'src/handles/UnixStreamSocket.cpp',
@@ -298,6 +300,14 @@
       [
         # C++ source files.
         'src/main.cpp'
+      ]
+    },
+    {
+      'target_name': 'avsterm',
+      'sources':
+      [
+        # C++ source files.
+        'src/console/avsterm.c'
       ]
     },
     {

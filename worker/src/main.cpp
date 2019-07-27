@@ -22,28 +22,50 @@
 #include <map>
 #include <string>
 #include <unistd.h> // usleep()
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include "../include/handles/HttpServer.hpp"
 
-static constexpr int ChannelFd{ 3 };
+int ChannelFd{ 3 };
 
 void IgnoreSignals();
 
-int main(int argc, char* argv[])
+int workerProcess(int argc, char * argv[])
 {
 	// Ensure we are called by our Node library.
-	if (std::getenv("MEDIASOUP_VERSION") == nullptr)
-	{
-		MS_ERROR_STD("you don't seem to be my real father!");
+//	if (std::getenv("MEDIASOUP_VERSION") == nullptr)
+//	{
+//		MS_ERROR_STD("you don't seem to be my real father!");
+//
+//		std::_Exit(EXIT_FAILURE);
+//	}
 
-		std::_Exit(EXIT_FAILURE);
-	}
-
-	std::string version = std::getenv("MEDIASOUP_VERSION");
+	//std::string version = std::getenv("MEDIASOUP_VERSION");
 
 	// Initialize libuv stuff (we need it for the Channel).
 	DepLibUV::ClassInit();
 
 	// Channel socket (it will be handled and deleted by the Worker).
 	Channel::UnixStreamSocket* channel{ nullptr };
+    int     sockfd;
+    struct sockaddr_un  servaddr;
+
+    sockfd = socket(AF_LOCAL, SOCK_DGRAM, 0);
+
+    unlink("/tmp/MSWorkerServer");            /* OK if this fails */
+
+    bzero(&servaddr, sizeof(servaddr));
+
+    servaddr.sun_family = AF_LOCAL;
+    strncpy(servaddr.sun_path, "/tmp/MSWorkerServer", sizeof(servaddr.sun_path) - 1);
+
+    bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+    ChannelFd = sockfd;
 
 	try
 	{
@@ -77,7 +99,7 @@ int main(int argc, char* argv[])
 		std::_Exit(EXIT_FAILURE);
 	}
 
-	MS_DEBUG_TAG(info, "starting mediasoup-worker process [version:%s]", version.c_str());
+	//MS_DEBUG_TAG(info, "starting mediasoup-worker process [version:%s]", version.c_str());
 
 #if defined(MS_LITTLE_ENDIAN)
 	MS_DEBUG_TAG(info, "little-endian CPU detected");
@@ -133,6 +155,7 @@ int main(int argc, char* argv[])
 
 		std::_Exit(EXIT_FAILURE);
 	}
+	return 0;
 }
 
 void IgnoreSignals()
@@ -170,4 +193,34 @@ void IgnoreSignals()
 		if (err != 0)
 			MS_THROW_ERROR("sigaction() failed for signal %s: %s", sigName.c_str(), std::strerror(errno));
 	}
+}
+
+
+void signalProcess() {
+
+	std::string port = "7999";
+	auto http_server = std::shared_ptr < HttpServer > (new HttpServer);
+	http_server->Init(port);
+	http_server->Start();
+
+}
+int main(int argc ,char *argv[]) {
+	pid_t id = fork();
+	if (id < 0) {
+		perror("fork");
+		return 2;
+	} else if (id == 0) {
+		printf("sub process!\n");
+		sleep(1);
+		workerProcess(argc, argv);
+	} else {
+		printf("main process!\n");
+		signalProcess();
+		int status = 0;
+		wait(&status); //wait the end of child process
+		if (WIFEXITED(status)) {
+			printf("child process return %d\n", WEXITSTATUS(status));
+		}
+	}
+	return 0;
 }

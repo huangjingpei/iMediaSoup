@@ -30,7 +30,7 @@ namespace Channel
 		jsonNotification["targetId"] = targetId;
 		jsonNotification["event"]    = event;
 
-		Notifier::channel->Send(jsonNotification);
+		//Notifier::channel->Send(jsonNotification);
 	}
 
 	void Notifier::Emit(const std::string& targetId, const char* event, json& data)
@@ -45,6 +45,6 @@ namespace Channel
 		jsonNotification["event"]    = event;
 		jsonNotification["data"]     = data;
 
-		Notifier::channel->Send(jsonNotification);
+		//Notifier::channel->Send(jsonNotification);
 	}
 } // namespace Channel
