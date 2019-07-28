@@ -8,11 +8,11 @@ namespace Channel
 {
 	/* Class variables. */
 
-	Channel::UnixStreamSocket* Notifier::channel{ nullptr };
+	Channel::UdpDgramSocket* Notifier::channel{ nullptr };
 
 	/* Static methods. */
 
-	void Notifier::ClassInit(Channel::UnixStreamSocket* channel)
+	void Notifier::ClassInit(Channel::UdpDgramSocket* channel)
 	{
 		MS_TRACE();
 

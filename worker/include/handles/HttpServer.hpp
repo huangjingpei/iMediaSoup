@@ -53,6 +53,10 @@ private:
 	static int m_unix_fd;
 	static char *m_unix_buf;
 	static struct sockaddr_un s_unix_addr;
+	static struct sockaddr_in addr;
+
+	static void unixSocketHandler(struct mg_connection *cgi_nc, int ev,
+	                              void *ev_data);
 #endif
 
 };

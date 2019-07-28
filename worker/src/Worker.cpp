@@ -10,7 +10,7 @@
 
 /* Instance methods. */
 
-Worker::Worker(Channel::UnixStreamSocket* channel) : channel(channel)
+Worker::Worker(Channel::UdpDgramSocket* channel) : channel(channel)
 {
 	MS_TRACE();
 
@@ -118,13 +118,14 @@ RTC::Router* Worker::GetRouterFromRequest(Channel::Request* request) const
 	return router;
 }
 
-inline void Worker::OnChannelRequest(Channel::UnixStreamSocket* /*channel*/, Channel::Request* request)
+inline void Worker::OnChannelRequest(Channel::UdpDgramSocket* /*channel*/, Channel::Request* request)
 {
 	MS_TRACE();
 
 	MS_DEBUG_DEV(
 	  "Channel request received [method:%s, id:%" PRIu32 "]", request->method.c_str(), request->id);
 
+	printf("OnChannelRequest :%s\n", request->method.c_str());
 	switch (request->methodId)
 	{
 		case Channel::Request::MethodId::WORKER_DUMP:
@@ -192,7 +193,7 @@ inline void Worker::OnChannelRequest(Channel::UnixStreamSocket* /*channel*/, Cha
 	}
 }
 
-inline void Worker::OnChannelRemotelyClosed(Channel::UnixStreamSocket* /*socket*/)
+inline void Worker::OnChannelRemotelyClosed(Channel::UdpDgramSocket* /*socket*/)
 {
 	MS_TRACE_STD();
 

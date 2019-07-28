@@ -12,7 +12,7 @@
 #include "Utils.hpp"
 #include "Worker.hpp"
 #include "Channel/Notifier.hpp"
-#include "Channel/UnixStreamSocket.hpp"
+#include "Channel/UdpDgramSocket.hpp"
 #include "RTC/DtlsTransport.hpp"
 #include "RTC/SrtpSession.hpp"
 #include <cerrno>
@@ -28,9 +28,8 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include "../include/handles/HttpServer.hpp"
+#include "handles/HttpServer.hpp"
 
-int ChannelFd{ 3 };
 
 void IgnoreSignals();
 
@@ -50,26 +49,10 @@ int workerProcess(int argc, char * argv[])
 	DepLibUV::ClassInit();
 
 	// Channel socket (it will be handled and deleted by the Worker).
-	Channel::UnixStreamSocket* channel{ nullptr };
-    int     sockfd;
-    struct sockaddr_un  servaddr;
-
-    sockfd = socket(AF_LOCAL, SOCK_DGRAM, 0);
-
-    unlink("/tmp/MSWorkerServer");            /* OK if this fails */
-
-    bzero(&servaddr, sizeof(servaddr));
-
-    servaddr.sun_family = AF_LOCAL;
-    strncpy(servaddr.sun_path, "/tmp/MSWorkerServer", sizeof(servaddr.sun_path) - 1);
-
-    bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
-
-    ChannelFd = sockfd;
-
+	Channel::UdpDgramSocket* channel{ nullptr };
 	try
 	{
-		channel = new Channel::UnixStreamSocket(ChannelFd);
+		channel = new Channel::UdpDgramSocket();
 	}
 	catch (const MediaSoupError& error)
 	{

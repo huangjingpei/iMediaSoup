@@ -4,7 +4,7 @@
 #include "common.hpp"
 #include "json.hpp"
 #include "Channel/Request.hpp"
-#include "Channel/UnixStreamSocket.hpp"
+#include "Channel/UdpDgramSocket.hpp"
 #include "RTC/Router.hpp"
 #include "handles/SignalsHandler.hpp"
 #include <string>
@@ -12,10 +12,10 @@
 
 using json = nlohmann::json;
 
-class Worker : public Channel::UnixStreamSocket::Listener, public SignalsHandler::Listener
+class Worker : public Channel::UdpDgramSocket::Listener, public SignalsHandler::Listener
 {
 public:
-	explicit Worker(Channel::UnixStreamSocket* channel);
+	explicit Worker(Channel::UdpDgramSocket* channel);
 	~Worker();
 
 private:
@@ -24,10 +24,10 @@ private:
 	void SetNewRouterIdFromRequest(Channel::Request* request, std::string& routerId) const;
 	RTC::Router* GetRouterFromRequest(Channel::Request* request) const;
 
-	/* Methods inherited from Channel::lUnixStreamSocket::Listener. */
+	/* Methods inherited from Channel::UdpDgramSocket::Listener. */
 public:
-	void OnChannelRequest(Channel::UnixStreamSocket* channel, Channel::Request* request) override;
-	void OnChannelRemotelyClosed(Channel::UnixStreamSocket* channel) override;
+	void OnChannelRequest(Channel::UdpDgramSocket* channel, Channel::Request* request) override;
+	void OnChannelRemotelyClosed(Channel::UdpDgramSocket* channel) override;
 
 	/* Methods inherited from SignalsHandler::Listener. */
 public:
@@ -35,7 +35,7 @@ public:
 
 private:
 	// Passed by argument.
-	Channel::UnixStreamSocket* channel{ nullptr };
+	Channel::UdpDgramSocket* channel{ nullptr };
 	// Allocated by this.
 	SignalsHandler* signalsHandler{ nullptr };
 	// Others.

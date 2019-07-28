@@ -59,7 +59,7 @@ namespace Channel
 
 	/* Instance methods. */
 
-	Request::Request(Channel::UnixStreamSocket* channel, json& jsonRequest) : channel(channel)
+	Request::Request(Channel::UdpDgramSocket* channel, json& jsonRequest) : channel(channel)
 	{
 		//MediaSoup的参数解析部分的特点
 		//1.必须要有'id'，'method'没有则出错

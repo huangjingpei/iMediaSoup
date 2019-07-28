@@ -3,7 +3,7 @@
 
 #include "common.hpp"
 #include "json.hpp"
-#include "Channel/UnixStreamSocket.hpp"
+#include "Channel/UdpDgramSocket.hpp"
 #include <string>
 
 namespace Channel
@@ -11,13 +11,13 @@ namespace Channel
 	class Notifier
 	{
 	public:
-		static void ClassInit(Channel::UnixStreamSocket* channel);
+		static void ClassInit(Channel::UdpDgramSocket* channel);
 		static void Emit(const std::string& targetId, const char* event);
 		static void Emit(const std::string& targetId, const char* event, json& data);
 
 	public:
 		// Passed by argument.
-		static Channel::UnixStreamSocket* channel;
+		static Channel::UdpDgramSocket* channel;
 	};
 } // namespace Channel
 

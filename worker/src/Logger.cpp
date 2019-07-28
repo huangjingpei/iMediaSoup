@@ -7,12 +7,12 @@
 /* Class variables. */
 
 const int64_t Logger::pid{ static_cast<int64_t>(getpid()) };
-Channel::UnixStreamSocket* Logger::channel{ nullptr };
+Channel::UdpDgramSocket* Logger::channel{ nullptr };
 char Logger::buffer[Logger::bufferSize];
 
 /* Class methods. */
 
-void Logger::ClassInit(Channel::UnixStreamSocket* channel)
+void Logger::ClassInit(Channel::UdpDgramSocket* channel)
 {
 	Logger::channel = channel;
 
